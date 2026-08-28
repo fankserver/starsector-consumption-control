@@ -36,6 +36,8 @@ public final class ConsumptionControlScript implements EveryFrameScript {
             return;
         }
 
+        ConsumptionControlSettings.refresh();
+
         Set<FleetMemberAPI> currentMembers = identitySet();
         currentMembers.addAll(fleet.getFleetData().getMembersListCopy());
         if (appliedSettingsRevision == ConsumptionControlSettings.getRevision()
@@ -58,6 +60,9 @@ public final class ConsumptionControlScript implements EveryFrameScript {
             modifiedMembers().clear();
         }
 
+        fleet.forceSync();
+        fleet.getLogistics().updateRepairUtilizationForUI();
+
         lastPlayerFleetMembers().clear();
         lastPlayerFleetMembers().addAll(currentMembers);
         appliedSettingsRevision = ConsumptionControlSettings.getRevision();
@@ -68,6 +73,8 @@ public final class ConsumptionControlScript implements EveryFrameScript {
             CampaignFleetAPI fleet = Global.getSector().getPlayerFleet();
             clearFleetModifier(fleet);
             clearMembers(fleet.getFleetData().getMembersListCopy());
+            fleet.forceSync();
+            fleet.getLogistics().updateRepairUtilizationForUI();
         }
         clearMembers(modifiedMembers());
         modifiedMembers().clear();

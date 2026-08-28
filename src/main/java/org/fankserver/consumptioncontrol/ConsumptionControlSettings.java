@@ -28,14 +28,34 @@ public final class ConsumptionControlSettings implements LunaSettingsListener {
         }
     }
 
-    private static void reload() {
-        enabled = getBoolean("cc_enabled", true);
-        hyperspaceFuelMultiplier = getMultiplier("cc_hyperspaceFuelMultiplier");
-        maintenanceMultiplier = getMultiplier("cc_maintenanceMultiplier");
-        recoverySupplyMultiplier = getMultiplier("cc_recoverySupplyMultiplier");
-        repairSpeedMultiplier = getMultiplier("cc_repairSpeedMultiplier");
-        crRecoverySpeedMultiplier = getMultiplier("cc_crRecoverySpeedMultiplier");
+    public static void refresh() {
+        boolean newEnabled = getBoolean("cc_enabled", true);
+        float newHyperspaceFuelMultiplier = getMultiplier("cc_hyperspaceFuelMultiplier");
+        float newMaintenanceMultiplier = getMultiplier("cc_maintenanceMultiplier");
+        float newRecoverySupplyMultiplier = getMultiplier("cc_recoverySupplyMultiplier");
+        float newRepairSpeedMultiplier = getMultiplier("cc_repairSpeedMultiplier");
+        float newCrRecoverySpeedMultiplier = getMultiplier("cc_crRecoverySpeedMultiplier");
+
+        if (enabled == newEnabled
+                && Float.compare(hyperspaceFuelMultiplier, newHyperspaceFuelMultiplier) == 0
+                && Float.compare(maintenanceMultiplier, newMaintenanceMultiplier) == 0
+                && Float.compare(recoverySupplyMultiplier, newRecoverySupplyMultiplier) == 0
+                && Float.compare(repairSpeedMultiplier, newRepairSpeedMultiplier) == 0
+                && Float.compare(crRecoverySpeedMultiplier, newCrRecoverySpeedMultiplier) == 0) {
+            return;
+        }
+
+        enabled = newEnabled;
+        hyperspaceFuelMultiplier = newHyperspaceFuelMultiplier;
+        maintenanceMultiplier = newMaintenanceMultiplier;
+        recoverySupplyMultiplier = newRecoverySupplyMultiplier;
+        repairSpeedMultiplier = newRepairSpeedMultiplier;
+        crRecoverySpeedMultiplier = newCrRecoverySpeedMultiplier;
         revision++;
+    }
+
+    private static void reload() {
+        refresh();
     }
 
     private static boolean getBoolean(String fieldId, boolean fallback) {
