@@ -4,5 +4,6 @@ import com.fs.starfarer.api.fleet.MutableFleetStatsAPI;
 public interface CampaignFleetAPI {
     FleetDataAPI getFleetData();
     MutableFleetStatsAPI getStats();
+    SectorEntityToken getInteractionTarget();
     void forceSync();
 }

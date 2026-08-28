@@ -9,7 +9,8 @@ public final class ConsumptionControlSettings implements LunaSettingsListener {
     private static boolean enabled = true;
     private static float hyperspaceFuelMultiplier = 1f;
     private static float maintenanceMultiplier = 1f;
-    private static float recoverySupplyMultiplier = 1f;
+    private static float fieldRecoverySupplyMultiplier = 1f;
+    private static float dockRepairCostMultiplier = 1f;
     private static float repairSpeedMultiplier = 1f;
     private static float crRecoverySpeedMultiplier = 1f;
     private static long revision = 0L;
@@ -32,14 +33,16 @@ public final class ConsumptionControlSettings implements LunaSettingsListener {
         boolean newEnabled = getBoolean("cc_enabled", true);
         float newHyperspaceFuelMultiplier = getMultiplier("cc_hyperspaceFuelMultiplier");
         float newMaintenanceMultiplier = getMultiplier("cc_maintenanceMultiplier");
-        float newRecoverySupplyMultiplier = getMultiplier("cc_recoverySupplyMultiplier");
+        float newFieldRecoverySupplyMultiplier = getMultiplier("cc_recoverySupplyMultiplier");
+        float newDockRepairCostMultiplier = getMultiplier("cc_dockRepairCostMultiplier");
         float newRepairSpeedMultiplier = getMultiplier("cc_repairSpeedMultiplier");
         float newCrRecoverySpeedMultiplier = getMultiplier("cc_crRecoverySpeedMultiplier");
 
         if (enabled == newEnabled
                 && Float.compare(hyperspaceFuelMultiplier, newHyperspaceFuelMultiplier) == 0
                 && Float.compare(maintenanceMultiplier, newMaintenanceMultiplier) == 0
-                && Float.compare(recoverySupplyMultiplier, newRecoverySupplyMultiplier) == 0
+                && Float.compare(fieldRecoverySupplyMultiplier, newFieldRecoverySupplyMultiplier) == 0
+                && Float.compare(dockRepairCostMultiplier, newDockRepairCostMultiplier) == 0
                 && Float.compare(repairSpeedMultiplier, newRepairSpeedMultiplier) == 0
                 && Float.compare(crRecoverySpeedMultiplier, newCrRecoverySpeedMultiplier) == 0) {
             return;
@@ -48,7 +51,8 @@ public final class ConsumptionControlSettings implements LunaSettingsListener {
         enabled = newEnabled;
         hyperspaceFuelMultiplier = newHyperspaceFuelMultiplier;
         maintenanceMultiplier = newMaintenanceMultiplier;
-        recoverySupplyMultiplier = newRecoverySupplyMultiplier;
+        fieldRecoverySupplyMultiplier = newFieldRecoverySupplyMultiplier;
+        dockRepairCostMultiplier = newDockRepairCostMultiplier;
         repairSpeedMultiplier = newRepairSpeedMultiplier;
         crRecoverySpeedMultiplier = newCrRecoverySpeedMultiplier;
         revision++;
@@ -74,14 +78,16 @@ public final class ConsumptionControlSettings implements LunaSettingsListener {
     public static boolean isEnabled() { return enabled; }
     public static float getHyperspaceFuelMultiplier() { return hyperspaceFuelMultiplier; }
     public static float getMaintenanceMultiplier() { return maintenanceMultiplier; }
-    public static float getRecoverySupplyMultiplier() { return recoverySupplyMultiplier; }
+    public static float getRecoverySupplyMultiplier(boolean dockedAtMarket) {
+        return dockedAtMarket ? dockRepairCostMultiplier : fieldRecoverySupplyMultiplier;
+    }
     public static float getRepairSpeedMultiplier() { return repairSpeedMultiplier; }
     public static float getCrRecoverySpeedMultiplier() { return crRecoverySpeedMultiplier; }
     public static long getRevision() { return revision; }
 
-    public static boolean hasShipAdjustments() {
+    public static boolean hasShipAdjustments(boolean dockedAtMarket) {
         return Float.compare(maintenanceMultiplier, 1f) != 0
-                || Float.compare(recoverySupplyMultiplier, 1f) != 0
+                || Float.compare(getRecoverySupplyMultiplier(dockedAtMarket), 1f) != 0
                 || Float.compare(repairSpeedMultiplier, 1f) != 0
                 || Float.compare(crRecoverySpeedMultiplier, 1f) != 0;
     }

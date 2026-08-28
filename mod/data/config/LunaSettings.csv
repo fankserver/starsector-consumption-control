@@ -5,6 +5,7 @@ cc_headerFuel,Fuel,Header,Fuel,,,,,General
 cc_hyperspaceFuelMultiplier,Hyperspace Fuel Consumption,Double,1.0,,Multiplier for fuel consumed while travelling through hyperspace. Normal-space travel is unchanged. 1 is vanilla; 0.1 is 10 percent; 0 disables hyperspace travel fuel use.,0,2,Fuel
 cc_headerSupplies,Supplies and Recovery,Header,Supplies and Recovery,,,,,Supplies
 cc_maintenanceMultiplier,Monthly Ship Maintenance,Double,1.0,,Multiplier for recurring ship maintenance supply consumption. 1 is vanilla; 0 disables ship maintenance consumption.,0,2,Supplies
-cc_recoverySupplyMultiplier,Repair and CR Supply Cost,Double,1.0,,Multiplier for supplies consumed while restoring armor hull and combat readiness. Starsector exposes these recovery costs as one combined ship value.,0,2,Supplies
+cc_recoverySupplyMultiplier,Field Repair and CR Supply Cost,Double,1.0,,Multiplier for supplies consumed continuously while restoring armor hull and combat readiness away from markets. 1 is vanilla; 0.1 is 10 percent.,0,2,Supplies
+cc_dockRepairCostMultiplier,Dock Repair Cost,Double,1.0,,Multiplier used for repair and recovery costs while interacting with a market. Leave at 1 to preserve vanilla dock repair pricing.,0,2,Supplies
 cc_repairSpeedMultiplier,Hull and Armor Repair Speed,Double,1.0,,Multiplier for passive hull and armor repair speed. Set to 0 to suspend field repairs without making them free.,0,2,Recovery
 cc_crRecoverySpeedMultiplier,Combat Readiness Recovery Speed,Double,1.0,,Multiplier for passive combat-readiness recovery speed. Set to 0 to suspend CR recovery.,0,2,Recovery

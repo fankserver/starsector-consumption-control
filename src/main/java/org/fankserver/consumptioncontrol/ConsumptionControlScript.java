@@ -19,6 +19,7 @@ public final class ConsumptionControlScript implements EveryFrameScript {
 
     private transient Set<FleetMemberAPI> modifiedMembers;
     private transient Set<FleetMemberAPI> lastPlayerFleetMembers;
+    private transient Boolean lastDockedAtMarket;
     private transient long appliedSettingsRevision = Long.MIN_VALUE;
 
     @Override
@@ -40,16 +41,19 @@ public final class ConsumptionControlScript implements EveryFrameScript {
 
         ConsumptionControlSettings.refresh();
 
+        boolean dockedAtMarket = isDockedAtMarket(fleet);
         Set<FleetMemberAPI> currentMembers = identitySet();
         currentMembers.addAll(fleet.getFleetData().getMembersListCopy());
         if (appliedSettingsRevision == ConsumptionControlSettings.getRevision()
-                && currentMembers.equals(lastPlayerFleetMembers())) {
+                && currentMembers.equals(lastPlayerFleetMembers())
+                && lastDockedAtMarket != null
+                && lastDockedAtMarket == dockedAtMarket) {
             return;
         }
 
         removeBuffsFromDepartedMembers(currentMembers);
         boolean applyShipAdjustments = ConsumptionControlSettings.isEnabled()
-                && ConsumptionControlSettings.hasShipAdjustments();
+                && ConsumptionControlSettings.hasShipAdjustments(dockedAtMarket);
 
         for (FleetMemberAPI member : currentMembers) {
             if (applyShipAdjustments) {
@@ -72,6 +76,7 @@ public final class ConsumptionControlScript implements EveryFrameScript {
 
         lastPlayerFleetMembers().clear();
         lastPlayerFleetMembers().addAll(currentMembers);
+        lastDockedAtMarket = dockedAtMarket;
         appliedSettingsRevision = ConsumptionControlSettings.getRevision();
     }
 
@@ -93,6 +98,7 @@ public final class ConsumptionControlScript implements EveryFrameScript {
         }
 
         lastPlayerFleetMembers().clear();
+        lastDockedAtMarket = null;
         appliedSettingsRevision = Long.MIN_VALUE;
     }
 
@@ -118,6 +124,10 @@ public final class ConsumptionControlScript implements EveryFrameScript {
 
     private void removeBuff(FleetMemberAPI member) {
         member.getBuffManager().removeBuff(BUFF_ID);
+    }
+
+    private static boolean isDockedAtMarket(CampaignFleetAPI fleet) {
+        return fleet.getInteractionTarget() != null && fleet.getInteractionTarget().getMarket() != null;
     }
 
     private static void applyMultiplier(MutableStat stat, float multiplier) {
@@ -150,7 +160,8 @@ public final class ConsumptionControlScript implements EveryFrameScript {
             applyMultiplier(member.getStats().getSuppliesPerMonth(),
                     ConsumptionControlSettings.getMaintenanceMultiplier());
             applyMultiplier(member.getStats().getSuppliesToRecover(),
-                    ConsumptionControlSettings.getRecoverySupplyMultiplier());
+                    ConsumptionControlSettings.getRecoverySupplyMultiplier(
+                            isDockedAtMarket(Global.getSector().getPlayerFleet())));
             applyMultiplier(member.getStats().getRepairRatePercentPerDay(),
                     ConsumptionControlSettings.getRepairSpeedMultiplier());
             applyMultiplier(member.getStats().getBaseCRRecoveryRatePercentPerDay(),

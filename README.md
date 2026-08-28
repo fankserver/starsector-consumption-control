@@ -8,7 +8,8 @@ Installing the mod does not alter campaign balance: every multiplier defaults to
 
 - Hyperspace fuel consumption
 - Monthly ship maintenance
-- Combined repair and combat-readiness recovery supply cost
+- Field repair and combat-readiness recovery supply cost
+- Dock repair cost (independently configurable; vanilla by default)
 - Hull and armor repair speed
 - Combat-readiness recovery speed
 
@@ -19,7 +20,7 @@ Every multiplier accepts values from `0.0` to `2.0`:
 - `0.0`: disabled
 - `2.0`: double vanilla
 
-Only the hyperspace fuel multiplier is changed; normal-space travel and explicit campaign actions are untouched. Starsector exposes armor/hull repair and CR recovery supply cost through one combined ship stat, so those costs share one setting.
+Only the hyperspace fuel multiplier is changed; normal-space travel and unrelated explicit campaign actions are untouched. Starsector exposes field recovery and dock repair pricing through one ship stat, so Consumption Control switches that stat contextually: the field multiplier applies while travelling and the dock multiplier applies while interacting with a market.
 
 ## Requirements
 
