@@ -1,0 +1,16 @@
+{
+  "id": "consumption_control",
+  "name": "Consumption Control",
+  "author": "fankserver",
+  "version": {"major": 0, "minor": 1, "patch": 0},
+  "description": "Vanilla-neutral, configurable multipliers for hyperspace fuel use, ship maintenance, repairs, and combat-readiness recovery.",
+  "gameVersion": "0.98a-RC8",
+  "jars": ["jars/ConsumptionControl.jar"],
+  "modPlugin": "org.fankserver.consumptioncontrol.ConsumptionControlModPlugin",
+  "dependencies": [
+    {
+      "id": "lunalib",
+      "name": "LunaLib"
+    }
+  ]
+}
