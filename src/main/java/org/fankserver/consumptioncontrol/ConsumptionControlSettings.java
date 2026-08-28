@@ -79,5 +79,12 @@ public final class ConsumptionControlSettings implements LunaSettingsListener {
     public static float getCrRecoverySpeedMultiplier() { return crRecoverySpeedMultiplier; }
     public static long getRevision() { return revision; }
 
+    public static boolean hasShipAdjustments() {
+        return Float.compare(maintenanceMultiplier, 1f) != 0
+                || Float.compare(recoverySupplyMultiplier, 1f) != 0
+                || Float.compare(repairSpeedMultiplier, 1f) != 0
+                || Float.compare(crRecoverySpeedMultiplier, 1f) != 0;
+    }
+
     private ConsumptionControlSettings() { }
 }

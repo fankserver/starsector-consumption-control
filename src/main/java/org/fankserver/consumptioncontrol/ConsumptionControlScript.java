@@ -2,6 +2,7 @@ package org.fankserver.consumptioncontrol;
 
 import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
+import com.fs.starfarer.api.campaign.BuffManagerAPI;
 import com.fs.starfarer.api.campaign.CampaignFleetAPI;
 import com.fs.starfarer.api.combat.MutableStat;
 import com.fs.starfarer.api.fleet.FleetMemberAPI;
@@ -13,6 +14,7 @@ import java.util.Set;
 
 public final class ConsumptionControlScript implements EveryFrameScript {
     static final String MODIFIER_ID = "consumption_control";
+    private static final String BUFF_ID = "consumption_control_ship_costs";
     private static final String DESCRIPTION = "Consumption Control";
 
     private transient Set<FleetMemberAPI> modifiedMembers;
@@ -45,23 +47,28 @@ public final class ConsumptionControlScript implements EveryFrameScript {
             return;
         }
 
-        clearDepartedMembers(currentMembers);
-        clearFleetModifier(fleet);
-        clearMembers(currentMembers);
+        removeBuffsFromDepartedMembers(currentMembers);
+        boolean applyShipAdjustments = ConsumptionControlSettings.isEnabled()
+                && ConsumptionControlSettings.hasShipAdjustments();
 
+        for (FleetMemberAPI member : currentMembers) {
+            if (applyShipAdjustments) {
+                ensureBuff(member);
+                modifiedMembers().add(member);
+            } else {
+                removeBuff(member);
+                modifiedMembers().remove(member);
+            }
+        }
+
+        // Fleet synchronization resets ship stats, then reapplies buffs and updates repair rates.
+        fleet.forceSync();
+
+        fleet.getStats().getFuelUseHyperMult().unmodify(MODIFIER_ID);
         if (ConsumptionControlSettings.isEnabled()) {
             applyMultiplier(fleet.getStats().getFuelUseHyperMult(),
                     ConsumptionControlSettings.getHyperspaceFuelMultiplier());
-            for (FleetMemberAPI member : currentMembers) {
-                applyToMember(member);
-                modifiedMembers().add(member);
-            }
-        } else {
-            modifiedMembers().clear();
         }
-
-        fleet.forceSync();
-        fleet.getLogistics().updateRepairUtilizationForUI();
 
         lastPlayerFleetMembers().clear();
         lastPlayerFleetMembers().addAll(currentMembers);
@@ -69,62 +76,54 @@ public final class ConsumptionControlScript implements EveryFrameScript {
     }
 
     public void clearAll() {
-        if (Global.getSector() != null && Global.getSector().getPlayerFleet() != null) {
-            CampaignFleetAPI fleet = Global.getSector().getPlayerFleet();
-            clearFleetModifier(fleet);
-            clearMembers(fleet.getFleetData().getMembersListCopy());
-            fleet.forceSync();
-            fleet.getLogistics().updateRepairUtilizationForUI();
+        CampaignFleetAPI fleet = Global.getSector() == null ? null : Global.getSector().getPlayerFleet();
+        if (fleet != null) {
+            for (FleetMemberAPI member : fleet.getFleetData().getMembersListCopy()) {
+                removeBuff(member);
+            }
         }
-        clearMembers(modifiedMembers());
+        for (FleetMemberAPI member : modifiedMembers()) {
+            removeBuff(member);
+        }
         modifiedMembers().clear();
+
+        if (fleet != null) {
+            fleet.forceSync();
+            fleet.getStats().getFuelUseHyperMult().unmodify(MODIFIER_ID);
+        }
+
         lastPlayerFleetMembers().clear();
         appliedSettingsRevision = Long.MIN_VALUE;
     }
 
-    private void applyToMember(FleetMemberAPI member) {
-        applyMultiplier(member.getStats().getSuppliesPerMonth(),
-                ConsumptionControlSettings.getMaintenanceMultiplier());
-        applyMultiplier(member.getStats().getSuppliesToRecover(),
-                ConsumptionControlSettings.getRecoverySupplyMultiplier());
-        applyMultiplier(member.getStats().getRepairRatePercentPerDay(),
-                ConsumptionControlSettings.getRepairSpeedMultiplier());
-        applyMultiplier(member.getStats().getBaseCRRecoveryRatePercentPerDay(),
-                ConsumptionControlSettings.getCrRecoverySpeedMultiplier());
+    private void ensureBuff(FleetMemberAPI member) {
+        BuffManagerAPI manager = member.getBuffManager();
+        if (!(manager.getBuff(BUFF_ID) instanceof ConsumptionControlBuff)) {
+            manager.removeBuff(BUFF_ID);
+            manager.addBuff(new ConsumptionControlBuff());
+        }
     }
 
-    private void clearDepartedMembers(Set<FleetMemberAPI> currentMembers) {
+    private void removeBuffsFromDepartedMembers(Set<FleetMemberAPI> currentMembers) {
         Iterator<FleetMemberAPI> iterator = modifiedMembers().iterator();
         while (iterator.hasNext()) {
             FleetMemberAPI member = iterator.next();
             if (!currentMembers.contains(member)) {
-                clearMember(member);
+                removeBuff(member);
+                member.updateStats();
                 iterator.remove();
             }
         }
     }
 
-    private void applyMultiplier(MutableStat stat, float multiplier) {
+    private void removeBuff(FleetMemberAPI member) {
+        member.getBuffManager().removeBuff(BUFF_ID);
+    }
+
+    private static void applyMultiplier(MutableStat stat, float multiplier) {
         if (Float.compare(multiplier, 1f) != 0) {
             stat.modifyMult(MODIFIER_ID, multiplier, DESCRIPTION);
         }
-    }
-
-    private void clearFleetModifier(CampaignFleetAPI fleet) {
-        fleet.getStats().getFuelUseHyperMult().unmodify(MODIFIER_ID);
-    }
-
-    private void clearMembers(Iterable<FleetMemberAPI> members) {
-        for (FleetMemberAPI member : members) {
-            clearMember(member);
-        }
-    }
-
-    private void clearMember(FleetMemberAPI member) {
-        member.getStats().getSuppliesPerMonth().unmodify(MODIFIER_ID);
-        member.getStats().getSuppliesToRecover().unmodify(MODIFIER_ID);
-        member.getStats().getRepairRatePercentPerDay().unmodify(MODIFIER_ID);
-        member.getStats().getBaseCRRecoveryRatePercentPerDay().unmodify(MODIFIER_ID);
     }
 
     private Set<FleetMemberAPI> modifiedMembers() {
@@ -143,5 +142,33 @@ public final class ConsumptionControlScript implements EveryFrameScript {
 
     private static Set<FleetMemberAPI> identitySet() {
         return Collections.newSetFromMap(new IdentityHashMap<FleetMemberAPI, Boolean>());
+    }
+
+    public static final class ConsumptionControlBuff implements BuffManagerAPI.Buff {
+        @Override
+        public void apply(FleetMemberAPI member) {
+            applyMultiplier(member.getStats().getSuppliesPerMonth(),
+                    ConsumptionControlSettings.getMaintenanceMultiplier());
+            applyMultiplier(member.getStats().getSuppliesToRecover(),
+                    ConsumptionControlSettings.getRecoverySupplyMultiplier());
+            applyMultiplier(member.getStats().getRepairRatePercentPerDay(),
+                    ConsumptionControlSettings.getRepairSpeedMultiplier());
+            applyMultiplier(member.getStats().getBaseCRRecoveryRatePercentPerDay(),
+                    ConsumptionControlSettings.getCrRecoverySpeedMultiplier());
+        }
+
+        @Override
+        public String getId() {
+            return BUFF_ID;
+        }
+
+        @Override
+        public boolean isExpired() {
+            return false;
+        }
+
+        @Override
+        public void advance(float amount) {
+        }
     }
 }
