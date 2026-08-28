@@ -22,6 +22,14 @@ Every multiplier accepts values from `0.0` to `2.0`:
 
 Only the hyperspace fuel multiplier is changed; normal-space travel and unrelated explicit campaign actions are untouched. Starsector exposes field recovery and dock repair pricing through one ship stat, so Consumption Control switches that stat contextually: the field multiplier applies while travelling and the dock multiplier applies while interacting with a market.
 
+## Save-game safety
+
+Consumption Control is **save-game safe to add or remove at any time**.
+
+It keeps no persistent state in `campaign.xml`: the ship adjustments are applied through runtime fleet buffs and stat modifiers that Starsector does not serialize, and the campaign script is re-registered on every load. Enabling the mod against an existing campaign, or disabling and deleting it later, works without any save conversion or risk of missing-class load errors.
+
+The only leftover is a harmless LunaLib settings file (`saves/common/LunaSettings/consumption_control.json.data`) containing your configured values; if you remove the mod, LunaLib simply ignores that file.
+
 ## Requirements
 
 - Starsector 0.98a
