@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build release asset
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(./scripts/semver.py "$GITHUB_REF_NAME")
+          ./scripts/build-release.sh "$GITHUB_REF_NAME"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "asset=Consumption-Control-$version.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.build.outputs.version }}
+          ASSET: ${{ steps.build.outputs.asset }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "dist/$ASSET" --clobber
+          else
+            release_flags=()
+            if [[ "${VERSION%%+*}" == *-* ]]; then
+              release_flags+=(--prerelease)
+            fi
+            gh release create "$GITHUB_REF_NAME" "dist/$ASSET" \
+              --title "Consumption Control $VERSION" \
+              --generate-notes \
+              "${release_flags[@]}"
+          fi

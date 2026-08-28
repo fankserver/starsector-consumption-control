@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest a new configurable logistics behavior
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What gameplay problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Explain the setting, its vanilla-neutral default, and expected range.
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: Compatibility considerations
+      description: List related mods or game mechanics that could interact with the proposal.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: The proposed default preserves vanilla behavior.
+          required: true
+        - label: I searched existing issues and requests.
+          required: true

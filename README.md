@@ -51,3 +51,16 @@ STARSECTOR_DIR='/path/to/Starsector' ./scripts/build-docker.sh
 Modifiers use the unique key `consumption_control`, are reapplied live when LunaLib settings change, and are removed before saving. Disabling the master setting restores vanilla values without requiring a new campaign.
 
 Do not use **No Maintenance Costs** at the same time if you want this mod's maintenance multiplier to be authoritative; that mod rewrites ship data directly.
+
+## Releases
+
+Push a strict Semantic Versioning tag to publish an install-ready GitHub Release:
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
+Prerelease tags such as `v1.2.3-beta.1` are supported and create prerelease GitHub Releases. The workflow derives the in-mod version from the tag, compiles the JAR inside Docker, and attaches `Consumption-Control-<version>.zip`. The ZIP contains a top-level `Consumption Control` directory ready to extract into `Starsector/mods`.
+
+GitHub Actions compiles against signature-only API stubs because Starsector's proprietary API JAR cannot be redistributed. Local builds continue to compile against the actual installed API through `scripts/build-docker.sh`.

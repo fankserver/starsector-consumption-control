@@ -1,0 +1,63 @@
+name: Bug report
+description: Report reproducible incorrect behavior or a compatibility problem
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a problem. Please avoid uploading sensitive information.
+  - type: input
+    id: version
+    attributes:
+      label: Consumption Control version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: game-version
+    attributes:
+      label: Starsector and LunaLib versions
+      placeholder: "Starsector 0.98a-RC8; LunaLib 2.0.5"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the observed and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Set ...
+        2. Travel ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: settings
+    attributes:
+      label: Settings and active mods
+      description: List configured multipliers and mods that may affect logistics.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste the relevant `starsector.log` section. Remove personal information first.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I tested with the latest release.
+          required: true
+        - label: I backed up my save before testing.
+          required: true
