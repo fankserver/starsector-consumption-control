@@ -4,12 +4,14 @@ import com.fs.starfarer.api.EveryFrameScript;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.campaign.BuffManagerAPI;
 import com.fs.starfarer.api.campaign.CampaignFleetAPI;
+import com.fs.starfarer.api.campaign.LocationAPI;
 import com.fs.starfarer.api.combat.MutableStat;
 import com.fs.starfarer.api.fleet.FleetMemberAPI;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 public final class ConsumptionControlScript implements EveryFrameScript {
@@ -18,9 +20,7 @@ public final class ConsumptionControlScript implements EveryFrameScript {
     private static final String DESCRIPTION = "Consumption Control";
 
     private transient Set<FleetMemberAPI> modifiedMembers;
-    private transient Set<FleetMemberAPI> lastPlayerFleetMembers;
-    private transient Boolean lastDockedAtMarket;
-    private transient long appliedSettingsRevision = Long.MIN_VALUE;
+    private transient Map<CampaignFleetAPI, FleetState> fleetStates;
 
     @Override
     public boolean isDone() {
@@ -34,30 +34,56 @@ public final class ConsumptionControlScript implements EveryFrameScript {
 
     @Override
     public void advance(float amount) {
-        CampaignFleetAPI fleet = Global.getSector() == null ? null : Global.getSector().getPlayerFleet();
-        if (fleet == null) {
+        if (Global.getSector() == null) {
             return;
         }
 
         ConsumptionControlSettings.refresh();
 
+        Set<CampaignFleetAPI> playerFleets = getPlayerFactionFleets();
+        Set<FleetMemberAPI> playerMembers = identitySet();
+        for (CampaignFleetAPI fleet : playerFleets) {
+            playerMembers.addAll(fleet.getFleetData().getMembersListCopy());
+        }
+        removeBuffsFromDepartedMembers(playerMembers);
+        removeModifiersFromDepartedFleets(playerFleets);
+
+        for (CampaignFleetAPI fleet : playerFleets) {
+            updateFleetIfNeeded(fleet);
+        }
+    }
+
+    public void clearAll() {
+        for (FleetMemberAPI member : modifiedMembers()) {
+            removeBuff(member);
+        }
+        modifiedMembers().clear();
+
+        for (CampaignFleetAPI fleet : fleetStates().keySet()) {
+            fleet.forceSync();
+            fleet.getStats().getFuelUseHyperMult().unmodify(MODIFIER_ID);
+        }
+        fleetStates().clear();
+    }
+
+    private void updateFleetIfNeeded(CampaignFleetAPI fleet) {
         boolean dockedAtMarket = isDockedAtMarket(fleet);
         Set<FleetMemberAPI> currentMembers = identitySet();
         currentMembers.addAll(fleet.getFleetData().getMembersListCopy());
-        if (appliedSettingsRevision == ConsumptionControlSettings.getRevision()
-                && currentMembers.equals(lastPlayerFleetMembers())
-                && lastDockedAtMarket != null
-                && lastDockedAtMarket == dockedAtMarket) {
+
+        FleetState previous = fleetStates().get(fleet);
+        if (previous != null
+                && previous.settingsRevision == ConsumptionControlSettings.getRevision()
+                && previous.members.equals(currentMembers)
+                && previous.dockedAtMarket == dockedAtMarket) {
             return;
         }
 
-        removeBuffsFromDepartedMembers(currentMembers);
         boolean applyShipAdjustments = ConsumptionControlSettings.isEnabled()
                 && ConsumptionControlSettings.hasShipAdjustments(dockedAtMarket);
-
         for (FleetMemberAPI member : currentMembers) {
             if (applyShipAdjustments) {
-                ensureBuff(member);
+                ensureBuff(member, dockedAtMarket);
                 modifiedMembers().add(member);
             } else {
                 removeBuff(member);
@@ -74,39 +100,35 @@ public final class ConsumptionControlScript implements EveryFrameScript {
                     ConsumptionControlSettings.getHyperspaceFuelMultiplier());
         }
 
-        lastPlayerFleetMembers().clear();
-        lastPlayerFleetMembers().addAll(currentMembers);
-        lastDockedAtMarket = dockedAtMarket;
-        appliedSettingsRevision = ConsumptionControlSettings.getRevision();
+        fleetStates().put(fleet, new FleetState(currentMembers, dockedAtMarket,
+                ConsumptionControlSettings.getRevision()));
     }
 
-    public void clearAll() {
-        CampaignFleetAPI fleet = Global.getSector() == null ? null : Global.getSector().getPlayerFleet();
-        if (fleet != null) {
-            for (FleetMemberAPI member : fleet.getFleetData().getMembersListCopy()) {
-                removeBuff(member);
+    private Set<CampaignFleetAPI> getPlayerFactionFleets() {
+        Set<CampaignFleetAPI> fleets = identitySet();
+        for (LocationAPI location : Global.getSector().getAllLocations()) {
+            for (CampaignFleetAPI fleet : location.getFleets()) {
+                if (fleet.getFaction() != null && fleet.getFaction().isPlayerFaction()) {
+                    fleets.add(fleet);
+                }
             }
         }
-        for (FleetMemberAPI member : modifiedMembers()) {
-            removeBuff(member);
-        }
-        modifiedMembers().clear();
 
-        if (fleet != null) {
-            fleet.forceSync();
-            fleet.getStats().getFuelUseHyperMult().unmodify(MODIFIER_ID);
+        // Keep the directly controlled fleet covered during location transitions.
+        CampaignFleetAPI playerFleet = Global.getSector().getPlayerFleet();
+        if (playerFleet != null) {
+            fleets.add(playerFleet);
         }
-
-        lastPlayerFleetMembers().clear();
-        lastDockedAtMarket = null;
-        appliedSettingsRevision = Long.MIN_VALUE;
+        return fleets;
     }
 
-    private void ensureBuff(FleetMemberAPI member) {
+    private void ensureBuff(FleetMemberAPI member, boolean dockedAtMarket) {
         BuffManagerAPI manager = member.getBuffManager();
-        if (!(manager.getBuff(BUFF_ID) instanceof ConsumptionControlBuff)) {
+        BuffManagerAPI.Buff existing = manager.getBuff(BUFF_ID);
+        if (!(existing instanceof ConsumptionControlBuff)
+                || ((ConsumptionControlBuff) existing).dockedAtMarket != dockedAtMarket) {
             manager.removeBuff(BUFF_ID);
-            manager.addBuff(new ConsumptionControlBuff());
+            manager.addBuff(new ConsumptionControlBuff(dockedAtMarket));
         }
     }
 
@@ -117,6 +139,17 @@ public final class ConsumptionControlScript implements EveryFrameScript {
             if (!currentMembers.contains(member)) {
                 removeBuff(member);
                 member.updateStats();
+                iterator.remove();
+            }
+        }
+    }
+
+    private void removeModifiersFromDepartedFleets(Set<CampaignFleetAPI> currentFleets) {
+        Iterator<CampaignFleetAPI> iterator = fleetStates().keySet().iterator();
+        while (iterator.hasNext()) {
+            CampaignFleetAPI fleet = iterator.next();
+            if (!currentFleets.contains(fleet)) {
+                fleet.getStats().getFuelUseHyperMult().unmodify(MODIFIER_ID);
                 iterator.remove();
             }
         }
@@ -143,25 +176,42 @@ public final class ConsumptionControlScript implements EveryFrameScript {
         return modifiedMembers;
     }
 
-    private Set<FleetMemberAPI> lastPlayerFleetMembers() {
-        if (lastPlayerFleetMembers == null) {
-            lastPlayerFleetMembers = identitySet();
+    private Map<CampaignFleetAPI, FleetState> fleetStates() {
+        if (fleetStates == null) {
+            fleetStates = new IdentityHashMap<CampaignFleetAPI, FleetState>();
         }
-        return lastPlayerFleetMembers;
+        return fleetStates;
     }
 
-    private static Set<FleetMemberAPI> identitySet() {
-        return Collections.newSetFromMap(new IdentityHashMap<FleetMemberAPI, Boolean>());
+    private static <T> Set<T> identitySet() {
+        return Collections.newSetFromMap(new IdentityHashMap<T, Boolean>());
+    }
+
+    private static final class FleetState {
+        private final Set<FleetMemberAPI> members;
+        private final boolean dockedAtMarket;
+        private final long settingsRevision;
+
+        private FleetState(Set<FleetMemberAPI> members, boolean dockedAtMarket, long settingsRevision) {
+            this.members = members;
+            this.dockedAtMarket = dockedAtMarket;
+            this.settingsRevision = settingsRevision;
+        }
     }
 
     public static final class ConsumptionControlBuff implements BuffManagerAPI.Buff {
+        private final boolean dockedAtMarket;
+
+        private ConsumptionControlBuff(boolean dockedAtMarket) {
+            this.dockedAtMarket = dockedAtMarket;
+        }
+
         @Override
         public void apply(FleetMemberAPI member) {
             applyMultiplier(member.getStats().getSuppliesPerMonth(),
                     ConsumptionControlSettings.getMaintenanceMultiplier());
             applyMultiplier(member.getStats().getSuppliesToRecover(),
-                    ConsumptionControlSettings.getRecoverySupplyMultiplier(
-                            isDockedAtMarket(Global.getSector().getPlayerFleet())));
+                    ConsumptionControlSettings.getRecoverySupplyMultiplier(dockedAtMarket));
             applyMultiplier(member.getStats().getRepairRatePercentPerDay(),
                     ConsumptionControlSettings.getRepairSpeedMultiplier());
             applyMultiplier(member.getStats().getBaseCRRecoveryRatePercentPerDay(),

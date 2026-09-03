@@ -20,7 +20,9 @@ Every multiplier accepts values from `0.0` to `2.0`:
 - `0.0`: disabled
 - `2.0`: double vanilla
 
-Only the hyperspace fuel multiplier is changed; normal-space travel and unrelated explicit campaign actions are untouched. Starsector exposes field recovery and dock repair pricing through one ship stat, so Consumption Control switches that stat contextually: the field multiplier applies while travelling and the dock multiplier applies while interacting with a market.
+The multipliers apply to every fleet belonging to the player faction, including detached fleets and special task groups, not only the fleet the player is personally commanding. NPC factions remain unaffected.
+
+Only the hyperspace fuel multiplier is changed; normal-space travel and unrelated explicit campaign actions are untouched. Starsector exposes field recovery and dock repair pricing through one ship stat, so Consumption Control switches that stat contextually for each player-owned fleet: the field multiplier applies while travelling and the dock multiplier applies while that fleet is interacting with a market.
 
 ## Save-game safety
 
