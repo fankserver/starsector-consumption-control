@@ -72,6 +72,8 @@ git tag v1.2.3
 git push origin v1.2.3
 ```
 
-Prerelease tags such as `v1.2.3-beta.1` are supported and create prerelease GitHub Releases. The workflow derives the in-mod version from the tag, compiles the JAR inside Docker, and attaches `Consumption-Control-<version>.zip`. The ZIP contains a top-level `Consumption Control` directory ready to extract into `Starsector/mods`.
+Prerelease tags such as `v1.2.3-beta.1` are supported and create prerelease GitHub Releases. The workflow derives the in-mod and Version Checker versions from the tag, compiles the JAR inside Docker, and attaches both versioned and stable download assets. The ZIP contains a top-level `Consumption Control` directory ready to extract into `Starsector/mods`.
+
+The mod includes Version Checker metadata. Its online version file and stable download URL are published as assets on the latest GitHub Release, so update checks do not depend on manually changing files on the default branch.
 
 GitHub Actions compiles against signature-only API stubs because Starsector's proprietary API JAR cannot be redistributed. Local builds continue to compile against the actual installed API through `scripts/build-docker.sh`.

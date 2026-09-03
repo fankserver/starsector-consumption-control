@@ -1,0 +1,11 @@
+{
+  "masterVersionFile": "https://github.com/fankserver/starsector-consumption-control/releases/latest/download/consumptioncontrol.version",
+  "modName": "Consumption Control",
+  "modVersion": {
+    "major": 0,
+    "minor": 2,
+    "patch": 0
+  },
+  "directDownloadURL": "https://github.com/fankserver/starsector-consumption-control/releases/latest/download/Consumption-Control.zip",
+  "changelogURL": "https://github.com/fankserver/starsector-consumption-control/releases/latest"
+}

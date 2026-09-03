@@ -22,6 +22,8 @@ jobs:
           set -euo pipefail
           version=$(./scripts/semver.py "$GITHUB_REF_NAME")
           ./scripts/build-release.sh "$GITHUB_REF_NAME"
+          cp "dist/Consumption-Control-$version.zip" dist/Consumption-Control.zip
+          cp "build/release/Consumption Control/consumptioncontrol.version" dist/consumptioncontrol.version
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "asset=Consumption-Control-$version.zip" >> "$GITHUB_OUTPUT"
 
@@ -33,14 +35,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          release_assets=(
+            "dist/$ASSET"
+            "dist/Consumption-Control.zip"
+            "dist/consumptioncontrol.version"
+          )
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "dist/$ASSET" --clobber
+            gh release upload "$GITHUB_REF_NAME" "${release_assets[@]}" --clobber
           else
             release_flags=()
             if [[ "${VERSION%%+*}" == *-* ]]; then
               release_flags+=(--prerelease)
             fi
-            gh release create "$GITHUB_REF_NAME" "dist/$ASSET" \
+            gh release create "$GITHUB_REF_NAME" "${release_assets[@]}" \
               --title "Consumption Control $VERSION" \
               --generate-notes \
               "${release_flags[@]}"
