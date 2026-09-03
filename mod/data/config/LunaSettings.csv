@@ -1,7 +1,7 @@
 fieldID,fieldName,fieldType,defaultValue,secondaryValue,fieldDescription,minValue,maxValue,tab
 cc_headerGeneral,General,Header,General,,,,,General
 cc_enabled,Enable Adjustments,Boolean,true,,Apply the configured multipliers. Disabling this removes every modifier and restores vanilla behavior.,,,General
-cc_headerFuel,Fuel,Header,Fuel,,,,,General
+cc_headerFuel,Fuel,Header,Fuel,,,,,Fuel
 cc_hyperspaceFuelMultiplier,Hyperspace Fuel Consumption,Double,1.0,,Multiplier for fuel consumed while travelling through hyperspace. Normal-space travel is unchanged. 1 is vanilla; 0.1 is 10 percent; 0 disables hyperspace travel fuel use.,0,2,Fuel
 cc_headerSupplies,Supplies and Recovery,Header,Supplies and Recovery,,,,,Supplies
 cc_maintenanceMultiplier,Monthly Ship Maintenance,Double,1.0,,Multiplier for recurring ship maintenance supply consumption. 1 is vanilla; 0 disables ship maintenance consumption.,0,2,Supplies
